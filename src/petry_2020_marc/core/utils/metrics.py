@@ -68,24 +68,7 @@ def compute_acc_acc5_f1_prec_rec(y_true, y_pred, print_metrics=True,
 class MetricsLogger:
 
     def __init__(self):
-        self._df = pd.DataFrame({'method': [],
-                                 'epoch': [],
-                                 'dataset': [],
-                                 'timestamp': [],
-                                 'train_loss': [],
-                                 'train_acc': [],
-                                 'train_acc_top5': [],
-                                 'train_f1_macro': [],
-                                 'train_prec_macro': [],
-                                 'train_rec_macro': [],
-                                 'train_acc_up': [],
-                                 'test_loss': [],
-                                 'test_acc': [],
-                                 'test_acc_top5': [],
-                                 'test_f1_macro': [],
-                                 'test_prec_macro': [],
-                                 'test_rec_macro': [],
-                                 'test_acc_up': []})
+        self._df = pd.DataFrame()
 
     def log(self, method, epoch, dataset, train_loss, train_acc,
             train_acc_top5, train_f1_macro, train_prec_macro, train_rec_macro,
@@ -100,25 +83,30 @@ class MetricsLogger:
             train_max_acc = 0
             test_max_acc = 0
 
-        self._df = self._df.append({'method': method,
-                                    'epoch': epoch,
-                                    'dataset': dataset,
-                                    'timestamp': timestamp,
-                                    'train_loss': train_loss,
-                                    'train_acc': train_acc,
-                                    'train_acc_top5': train_acc_top5,
-                                    'train_f1_macro': train_f1_macro,
-                                    'train_prec_macro': train_prec_macro,
-                                    'train_rec_macro': train_rec_macro,
-                                    'train_acc_up': 1 if train_acc > train_max_acc else 0,
-                                    'test_loss': test_loss,
-                                    'test_acc': test_acc,
-                                    'test_acc_top5': test_acc_top5,
-                                    'test_f1_macro': test_f1_macro,
-                                    'test_prec_macro': test_prec_macro,
-                                    'test_rec_macro': test_rec_macro,
-                                    'test_acc_up': 1 if test_acc > test_max_acc else 0},
-                                   ignore_index=True)
+        new_df = pd.DataFrame([{'method': method,
+                                'epoch': epoch,
+                                'dataset': dataset,
+                                'timestamp': timestamp,
+                                'train_loss': train_loss,
+                                'train_acc': train_acc,
+                                'train_acc_top5': train_acc_top5,
+                                'train_f1_macro': train_f1_macro,
+                                'train_prec_macro': train_prec_macro,
+                                'train_rec_macro': train_rec_macro,
+                                'train_acc_up': 1 if train_acc > train_max_acc else 0,
+                                'test_loss': test_loss,
+                                'test_acc': test_acc,
+                                'test_acc_top5': test_acc_top5,
+                                'test_f1_macro': test_f1_macro,
+                                'test_prec_macro': test_prec_macro,
+                                'test_rec_macro': test_rec_macro,
+                                'test_acc_up': 1 if test_acc > test_max_acc else 0}])
+        
+        if self._df.empty:
+            self._df = pd.concat([self._df, new_df],
+                                 ignore_index=True)
+        else:
+            self._df = new_df
 
     def save(self, file):
         self._df.to_csv(file, index=False)

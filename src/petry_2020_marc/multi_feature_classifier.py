@@ -1,5 +1,5 @@
 import sys
-from core.logger import Logger
+from .core.logger import Logger
 
 def main():
     logger = Logger()
@@ -43,7 +43,7 @@ def main():
     print('EMBEDDER_SIZE =', EMBEDDER_SIZE)
     print('MERGE_TYPE =', MERGE_TYPE, '\n')
 
-    from core.utils.metrics import MetricsLogger
+    from .core.utils.metrics import MetricsLogger
     metrics = MetricsLogger().load(METRICS_FILE)
 
 
@@ -53,7 +53,7 @@ def main():
     import pandas as pd
     import numpy as np
     from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-    from core.utils.geohash import bin_geohash
+    from .core.utils.geohash import bin_geohash
 
 
     def get_trajectories(train_file, test_file, tid_col='tid',
@@ -62,7 +62,7 @@ def main():
         logger.log(Logger.INFO, "Loading data from file(s) " + file_str + "... ")
         df_train = pd.read_csv(train_file)
         df_test = pd.read_csv(test_file)
-        df = df_train.copy().append(df_test)
+        df = pd.concat([df_train, df_test])
         tids_train = df_train[tid_col].unique()
 
         keys = list(df.keys())
@@ -148,22 +148,24 @@ def main():
 
         one_hot_y = OneHotEncoder().fit(df.loc[:, [label_col]])
 
-        x = [np.asarray(f) for f in x]
+        # Keep x as list of lists since trajectories have different lengths
+        # Convert to numpy arrays after padding
         y = one_hot_y.transform(pd.DataFrame(y)).toarray()
         logger.log(Logger.INFO, "Loading data from files " + file_str + "... DONE!")
         
-        x_train = np.asarray([f[idx_train] for f in x])
+        # Split the data into train/test sets while keeping as lists
+        x_train = [[f[i] for i in idx_train] for f in x]
         y_train = y[idx_train]
-        x_test = np.asarray([f[idx_test] for f in x])
+        x_test = [[f[i] for i in idx_test] for f in x]
         y_test = y[idx_test]
 
         logger.log(Logger.INFO, 'Trajectories:  ' + str(trajs))
         logger.log(Logger.INFO, 'Labels:        ' + str(len(y[0])))
         logger.log(Logger.INFO, 'Train size:    ' + str(len(x_train[0]) / trajs))
         logger.log(Logger.INFO, 'Test size:     ' + str(len(x_test[0]) / trajs))
-        logger.log(Logger.INFO, 'x_train shape: ' + str(x_train.shape))
+        logger.log(Logger.INFO, 'x_train shape: ' + str((len(x_train), len(x_train[0]))))
         logger.log(Logger.INFO, 'y_train shape: ' + str(y_train.shape))
-        logger.log(Logger.INFO, 'x_test shape:  ' + str(x_test.shape))
+        logger.log(Logger.INFO, 'x_test shape:  ' + str((len(x_test), len(x_test[0]))))
         logger.log(Logger.INFO, 'y_test shape:  ' + str(y_test.shape))
 
         return (keys, vocab_size, num_classes, max_length,
@@ -203,7 +205,7 @@ def main():
     from keras.optimizers import Adam
     from keras.layers import Input, Add, Average, Concatenate, Embedding
     from keras.callbacks import EarlyStopping
-    from core.utils.metrics import compute_acc_acc5_f1_prec_rec
+    from .core.utils.metrics import compute_acc_acc5_f1_prec_rec
 
 
     CLASS_DROPOUT = 0.5
@@ -331,7 +333,7 @@ def main():
                     activation='softmax')(rnn_dropout)
 
     classifier = Model(inputs=inputs, outputs=softmax)
-    opt = Adam(lr=CLASS_LRATE)
+    opt = Adam(learning_rate=CLASS_LRATE)
 
     classifier.compile(optimizer=opt,
                     loss='categorical_crossentropy',
