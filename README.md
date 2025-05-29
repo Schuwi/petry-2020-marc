@@ -38,3 +38,7 @@ Source code of the paper **MARC: a robust method for multiple-aspect trajectory 
     ```
     python multi_feature_classifier.py data/foursquare_nyc/train.csv data/foursquare_nyc/test.csv results.csv FoursquareNYC 100 concatenate lstm
     ```
+
+## Changelog
+
+- Schuwi (2025-05-29): Updated dependencies to current latest versions and converted to pyproject.toml format.
